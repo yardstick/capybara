@@ -25,11 +25,19 @@ Capybara::SpecHelper.spec '#dismiss_confirm', :requires => [:modals] do
     end.to raise_error(Capybara::ModalNotFound)
   end
     
-
   it "should return the message presented" do
     message = @session.dismiss_confirm do
       @session.click_link('Open confirm')
     end
     expect(message).to eq('Confirm opened')
+  end
+    
+  it "should allow nesting", focus: true do
+    @session.dismiss_confirm do
+      @session.accept_confirm do
+        @session.click_link('Open nested alert')
+      end
+    end
+    expect(@session).to have_xpath("//a[@id='open-nested-alert' and @declined='true']")
   end
 end
