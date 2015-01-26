@@ -23,8 +23,48 @@ module Capybara
         @block.call(node, value)
       end
     end
+    
+    class FilterSet
+      attr_reader :descriptions
 
-    attr_reader :name, :custom_filters, :format
+      def initialize(name, &block)
+        @name = name
+        @descriptions = []
+        instance_eval(&block)
+      end
+
+      def filter(name, options={}, &block)
+        filters[name] = Filter.new(name, block, options)
+      end
+      
+      def describe(&block)
+        descriptions.push block
+      end
+
+      def description(options={})
+        @descriptions.map {|desc| desc.call(options).to_s }.join
+      end
+
+      def filters
+        @filters ||= {}
+      end
+        
+      class << self        
+        def all
+          @filter_sets ||= {}
+        end
+        
+        def add(name, &block)
+          all[name.to_sym] = FilterSet.new(name.to_sym, &block)
+        end
+        
+        def remove(name)
+          all.delete(name.to_sym)
+        end
+      end
+    end
+
+    attr_reader :name, :format
 
     class << self
       def all
@@ -42,12 +82,15 @@ module Capybara
 
     def initialize(name, &block)
       @name = name
-      @custom_filters = {}
+      @filter_set = FilterSet.add(name){}
       @match = nil
       @label = nil
       @failure_message = nil
-      @description = nil
       instance_eval(&block)
+    end
+    
+    def custom_filters
+      @filter_set.filters
     end
 
     def xpath(&block)
@@ -74,7 +117,7 @@ module Capybara
     end
 
     def description(options={})
-      (@description && @description.call(options)).to_s
+      @filter_set.description(options)
     end
 
     def call(locator)
@@ -90,11 +133,19 @@ module Capybara
     end
 
     def filter(name, options={}, &block)
-      @custom_filters[name] = Filter.new(name, block, options)
+      custom_filters[name] = Filter.new(name, block, options)
+    end
+    
+    def filter_set(name)
+      f_set = FilterSet.all[name]
+      f_set.filters.each do | name, filter |
+        custom_filters[name] = filter
+      end
+      f_set.descriptions.each { |desc| @filter_set.describe &desc }
     end
 
     def describe &block
-      @description = block
+      @filter_set.describe &block
     end
   end
 end

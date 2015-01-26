@@ -4,7 +4,7 @@ module Capybara
   class Query < Queries::BaseQuery
     attr_accessor :selector, :locator, :options, :expression, :find, :negative
 
-    VALID_KEYS = [:text, :visible, :between, :count, :maximum, :minimum, :exact, :match, :wait]
+    VALID_KEYS = [:text, :visible, :between, :count, :maximum, :minimum, :exact, :match, :wait, :filter_set]
     VALID_MATCH = [:first, :smart, :prefer_exact, :one]
 
     def initialize(*args)
@@ -122,7 +122,8 @@ module Capybara
     private
 
     def valid_keys
-      COUNT_KEYS + [:text, :visible, :exact, :match, :wait] + @selector.custom_filters.keys
+      vk = COUNT_KEYS + [:text, :visible, :exact, :match, :wait, :filter_set] 
+      vk += options.has_key?(:filter_set) ? Capybara::Selector::FilterSet.all[options[:filter_set]].filters.keys : @selector.custom_filters.keys
     end
 
     def assert_valid_keys

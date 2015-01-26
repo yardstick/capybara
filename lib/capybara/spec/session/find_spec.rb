@@ -154,6 +154,31 @@ Capybara::SpecHelper.spec '#find' do
       expect { @session.find(:beatle, 'George', :type => 'drummer') }.to raise_error(Capybara::ElementNotFound)
     end
   end
+  
+  context "with alternate filter set" do
+    before do
+      Capybara::Selector::FilterSet.add(:value) do
+        filter(:with) { |node, with| node.value == with.to_s }
+      end
+      
+      Capybara.add_selector(:id_with_field_filters) do
+        xpath { |id| XPath.descendant[XPath.attr(:id) == id.to_s] }
+        filter_set(:field)
+      end        
+    end
+    
+    it "should allow use of filters from custom filter set" do
+      expect(@session.find(:id, 'test_field', filter_set: :value, with: 'monkey').value).to eq('monkey')
+    end
+    
+    it "should allow use of filter set from a different selector" do
+      expect(@session.find(:id, 'test_field', filter_set: :field, with: 'monkey').value).to eq('monkey')
+    end
+    
+    it "should allow importing of filter set into selector" do
+      expect(@session.find(:id_with_field_filters, 'test_field', with: 'monkey').value).to eq('monkey')    
+    end
+  end
 
   context "with css as default selector" do
     before { Capybara.default_selector = :css }
