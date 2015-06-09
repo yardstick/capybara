@@ -37,6 +37,10 @@ module Capybara
         raise NotImplementedError
       end
 
+      def hover
+        raise NotImplementedError
+      end
+
       def drag_to(element)
         raise NotImplementedError
       end
@@ -60,7 +64,7 @@ module Capybara
       def path
         raise NotSupportedByDriverError
       end
-      
+
       def trigger(event)
         raise NotSupportedByDriverError
       end
